@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "type": "aws-sam",
+            "request": "direct-invoke",
+            "name": "aws-serverless-step-functions-demo:handler.hello (nodejs16.x)",
+            "invokeTarget": {
+                "target": "code",
+                "projectRoot": "${workspaceFolder}/",
+                "lambdaHandler": "handler.hello"
+            },
+            "lambda": {
+                "runtime": "nodejs16.x",
+                "payload": {},
+                "environmentVariables": {}
+            }
+        }
+    ]
+}

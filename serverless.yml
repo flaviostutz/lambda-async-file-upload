@@ -1,0 +1,76 @@
+service: async-file-upload
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: us-east-1
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:*"
+      Resource:
+        - "*"
+
+functions:
+  scheduleUpload:
+    handler: handler.scheduleUpload
+    events:
+      - httpApi:
+          path: /schedule-upload
+          method: post
+  uploadToThirdParty:
+    handler: handler.uploadToThirdParty
+  deleteS3File:
+    handler: handler.deleteS3File
+
+stepFunctions:
+  stateMachines:
+    uploadAsync:
+      name: uploadAsync
+      definition: 
+        StartAt: UploadToThirdParty
+        States:
+          UploadToThirdParty:
+            Type: Task
+            Resource: 
+              Fn::GetAtt: [uploadToThirdParty, Arn]
+            End: true
+            Retry:
+            - ErrorEquals:
+              - States.ALL
+              IntervalSeconds: 1
+              MaxAttempts: 3
+              BackoffRate: 2
+            Catch: 
+            - ErrorEquals:
+              - States.ALL
+              Next: SQSDeadLetter
+          SQSDeadLetter:
+            Type: Task
+            Resource: arn:aws:states:::sqs:sendMessage
+            Parameters:
+              QueueUrl: 
+                Ref: DeadLetterQueue
+              MessageBody.$: $.input.message
+              MessageAttributes:
+                FailedFile:
+                    DataType: String
+                    StringValue: filex
+                FailReason:
+                    DataType: String
+                    StringValue: xyz
+            End: true
+
+resources:
+    Resources:  
+        DeadLetterQueue:
+            Type: AWS::SQS::Queue
+            Properties:
+              QueueName: DeadLetterQueue
+
+plugins:
+  - serverless-step-functions
+
