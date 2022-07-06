@@ -1,4 +1,4 @@
-# aws-serverless-step-functions-demo
+# lambda-async-file-upload
 
 This is a demo of how to define step functions using Serverless Framework.
 
