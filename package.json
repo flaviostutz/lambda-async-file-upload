@@ -1,0 +1,32 @@
+{
+  "name": "lambda-async-file-upload",
+  "version": "1.0.0",
+  "description": "Asynchronously upload files to a faulty target system using step functions",
+  "main": "handler.js",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.121.0",
+    "@aws-sdk/client-sfn": "^3.121.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.14.49",
+    "serverless-esbuild": "^1.31.0",
+    "serverless-iam-roles-per-function": "^3.2.0",
+    "serverless-offline": "^8.8.1",
+    "serverless-step-functions": "^3.7.0"
+  },
+  "scripts": {
+    "start": "sls offline start",
+    "build": "esbuild app.js --bundle --platform=node --target=node10.4",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flaviostutz/lambda-async-file-upload.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/flaviostutz/lambda-async-file-upload/issues"
+  },
+  "homepage": "https://github.com/flaviostutz/lambda-async-file-upload#readme"
+}

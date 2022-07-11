@@ -1,35 +1,48 @@
 service: async-file-upload
+configValidationMode: error
 
 frameworkVersion: '3'
 
 provider:
   name: aws
-  runtime: nodejs12.x
-  stage: dev
+  runtime: nodejs14.x
   region: us-east-1
-  iamRoleStatements:
-    - Effect: "Allow"
-      Action:
-        - "s3:*"
-      Resource:
-        - "*"
+  logRetentionInDays: 7
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action: s3:*
+          Resource: '*'
 
 functions:
+
   scheduleUpload:
-    handler: handler.scheduleUpload
+    handler: handlers/scheduleUpload.handler
     events:
       - httpApi:
           path: /schedule-upload
           method: post
+    iamRoleStatements:
+      - Effect: Allow
+        Action: states:StartExecution
+        Resource: !Ref UploadAsync
+      - Effect: Allow
+        Action: s3:*
+        Resource: '*'
+    environment:
+      STEP_FUNCTION_UPLOAD_ASYNC_ARN: !Ref UploadAsync
+      UPLOAD_BUCKET_NAME: !Ref UploadBucket
+
   uploadToThirdParty:
-    handler: handler.uploadToThirdParty
-  deleteS3File:
-    handler: handler.deleteS3File
+    handler: handlers/uploadToThirdParty.handler
+  # deleteS3File:
+  #   handler: handlers/deleteS3File.handler
 
 stepFunctions:
   stateMachines:
-    uploadAsync:
-      name: uploadAsync
+    UploadAsync:
+      name: UploadAsync
       definition: 
         StartAt: UploadToThirdParty
         States:
@@ -41,9 +54,9 @@ stepFunctions:
             Retry:
             - ErrorEquals:
               - States.ALL
-              IntervalSeconds: 1
-              MaxAttempts: 3
-              BackoffRate: 2
+              IntervalSeconds: 30
+              MaxAttempts: 25
+              BackoffRate: 1.4
             Catch: 
             - ErrorEquals:
               - States.ALL
@@ -57,20 +70,56 @@ stepFunctions:
               MessageBody.$: $.input.message
               MessageAttributes:
                 FailedFile:
-                    DataType: String
-                    StringValue: filex
+                  DataType: String
+                  StringValue: filex
                 FailReason:
-                    DataType: String
-                    StringValue: xyz
+                  DataType: String
+                  StringValue: xyz
             End: true
 
 resources:
-    Resources:  
-        DeadLetterQueue:
-            Type: AWS::SQS::Queue
-            Properties:
-              QueueName: DeadLetterQueue
+  Resources:  
+    DeadLetterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: DeadLetterQueue-${sls:stage}
+    UploadBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: upload-flaviostutz-${sls:stage}
+        AccessControl: Private
+
+    # Outputs:
+    #   UploadAsyncArn:
+    #     Description: UploadAsync step function Arn
+    #     Value:
+    #       Ref: UploadAsync
+    #   UploadBucketName:
+    #     Description: UploadBucket S3 Arn
+    #     Value:
+    #       Ref: UploadBucket
+    #   DeadLetterQueueArn:
+    #     Description: DeadLetterQueue Arn
+    #     Value:
+    #       Ref: DeadLetterQueue
+
+custom:
+
+  # uploadBucket:
+  #   Ref: UploadBucket
+
+  esbuild:
+    minify: false
+    bundle: true
+    sourcemap: true
+    watch:
+      pattern:
+        ['**/*.js']
+      ignore: ['.serverless/**/*', '.build', '.esbuild']
+    packager: npm
 
 plugins:
+  - serverless-esbuild
   - serverless-step-functions
-
+  - serverless-iam-roles-per-function
+  - serverless-offline
