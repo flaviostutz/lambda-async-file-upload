@@ -99,24 +99,7 @@ resources:
         BucketName: upload-flaviostutz-${sls:stage}
         AccessControl: Private
 
-    # Outputs:
-    #   UploadAsyncArn:
-    #     Description: UploadAsync step function Arn
-    #     Value:
-    #       Ref: UploadAsync
-    #   UploadBucketName:
-    #     Description: UploadBucket S3 Arn
-    #     Value:
-    #       Ref: UploadBucket
-    #   DeadLetterQueueArn:
-    #     Description: DeadLetterQueue Arn
-    #     Value:
-    #       Ref: DeadLetterQueue
-
 custom:
-
-  # uploadBucket:
-  #   Ref: UploadBucket
 
   esbuild:
     minify: false
