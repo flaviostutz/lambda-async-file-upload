@@ -15,7 +15,7 @@ console.log(`uploadAsyncStepFunctionArn=${uploadAsyncStepFunctionArn}`);
 
 module.exports.handler = async (event) => {
 
-    console.log(JSON.stringify(event, null, 4));
+    // console.log(JSON.stringify(event, null, 4));
 
     try {
         const file = event.queryStringParameters['file'];
@@ -29,7 +29,7 @@ module.exports.handler = async (event) => {
             };
         }
 
-        const tmpFileKey = `/tmp/${file}`;
+        const tmpFileKey = `tmp/${file}`;
         console.log(`Scheduling upload of ${bucketName}:${tmpFileKey}`);
 
         const exists = await fileExists(bucketName, tmpFileKey);
@@ -38,13 +38,13 @@ module.exports.handler = async (event) => {
             return {
                 statusCode: 404,
                 body: JSON.stringify({
-                    message:`File doesn't exist in /tmp folder`
+                    message:`File doesn't exist in tmp/ folder`
                 }),
             };
         }
 
-        console.log(`Copying file ${tmpFileKey} to folder /processing`);
-        const targetFileKey = await copyFile(bucketName, tmpFileKey, '/tmp', '/processing');
+        console.log(`Copying file ${tmpFileKey} to folder processing/`);
+        const targetFileKey = await copyFile(bucketName, tmpFileKey, 'tmp/', 'processing/');
 
         //TODO Delete file in /tmp folder?
 
@@ -52,9 +52,10 @@ module.exports.handler = async (event) => {
         await startExecution({
             stateMachineArn: uploadAsyncStepFunctionArn,
             input: JSON.stringify({
-                uploadFile: targetFileKey
+                sourceBucket: bucketName,
+                sourceFileKey: targetFileKey
             }),
-            name: targetFileKey //idempotency key
+            name: targetFileKey.replace('/','_') //idempotency key
         })
 
         return {

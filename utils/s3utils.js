@@ -5,8 +5,8 @@ const s3Client = new S3Client();
 const copyFile = async (bucketName, sourceFileKey, sourceFolder, destinationFolder) => {
   const targetFileKey = `${sourceFileKey.replace(sourceFolder, destinationFolder)}`;
   const command = new CopyObjectCommand({
-    Bucket: bucketName,
     CopySource: `${bucketName}/${sourceFileKey}`,  // old file Key
+    Bucket: bucketName,
     Key: targetFileKey, // new file Key
   });
   await s3Client.send(command);
@@ -23,12 +23,14 @@ const deleteFile = async (bucketName, fileKey) => {
 
 const fileExists = async (bucketName, fileKey) => {
   try {
-    const command = new DeleteObjectCommand({
+    const command = new HeadObjectCommand({
       Bucket: bucketName,
       Key: fileKey,
     });
     await s3Client.send(command);
+    return true
   } catch (err) {
+    console.log(`err=${JSON.stringify(err)}`);
     if (err.code === 'NotFound') {
       return false;
     }

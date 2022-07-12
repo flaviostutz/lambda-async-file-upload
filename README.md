@@ -16,3 +16,27 @@ For details about the workflow, see the spec at serverless.yml.
 
 Reference: https://github.com/serverless/blog/blob/master/posts/2017-09-18-how-to-manage-your-aws-step-functions-with-serverless.md
 
+## How to run
+
+* Configure your serverless with AWS credentials
+
+* Open serverless.yml and change the S3 bucket name to something different from 'upload-flaviostutz' because this must be unique among all AWS accounts in the same region
+
+* Deploy the stack
+
+```sh
+sls deploy --verbose
+```
+
+* Open AWS console, find S3 bucket 'upload-[name you used]-dev' and upload any file to folder 'tmp'
+
+* From the output of the deploy run, get the URL from the endpoint that ends with '/schedule-upload'
+
+* Schedule the asynchronous processing of this file by calling the endpoint
+
+```sh
+curl -X POST [URL from deploy ouput]/schedule-upload?file=[name of the file you uploaded to tmp]
+```
+
+* Open StepFunction on AWS Console and check the executions of the steps related to the file
+

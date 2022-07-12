@@ -36,8 +36,8 @@ functions:
 
   uploadToThirdParty:
     handler: handlers/uploadToThirdParty.handler
-  # deleteS3File:
-  #   handler: handlers/deleteS3File.handler
+  deleteS3File:
+    handler: handlers/deleteS3File.handler
 
 stepFunctions:
   stateMachines:
@@ -50,32 +50,42 @@ stepFunctions:
             Type: Task
             Resource: 
               Fn::GetAtt: [uploadToThirdParty, Arn]
-            End: true
             Retry:
             - ErrorEquals:
               - States.ALL
-              IntervalSeconds: 30
-              MaxAttempts: 25
-              BackoffRate: 1.4
-            Catch: 
+              IntervalSeconds: 4
+              MaxAttempts: 6
+              BackoffRate: 1.1
+            Catch:
             - ErrorEquals:
               - States.ALL
+              ResultPath: $.taskresult
               Next: SQSDeadLetter
+            ResultPath: null
+            Next: DeleteS3File
+          DeleteS3File:
+            Type: Task
+            Resource: 
+              Fn::GetAtt: [deleteS3File, Arn]
+            End: true
           SQSDeadLetter:
             Type: Task
             Resource: arn:aws:states:::sqs:sendMessage
             Parameters:
               QueueUrl: 
                 Ref: DeadLetterQueue
-              MessageBody.$: $.input.message
-              MessageAttributes:
-                FailedFile:
-                  DataType: String
-                  StringValue: filex
-                FailReason:
-                  DataType: String
-                  StringValue: xyz
-            End: true
+              MessageBody.$: $
+              # MessageAttributes:
+              #   FailedFile:
+              #     DataType: String
+              #     StringValue: filex
+              #   FailReason:
+              #     DataType: String
+              #     StringValue: xyz
+            Next: FailRetries
+          FailRetries:
+            Type: Fail
+            Cause: Failed after multiple retries. Check deadletter queue
 
 resources:
   Resources:  
