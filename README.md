@@ -2,6 +2,11 @@
 
 This is a demo of how to define step functions using Serverless Framework.
 
+[<img src="sf1.png" width="300">](https://youtu.be/OZWFlgPxJpU)
+[<img src="sf2.png" width="300">](https://youtu.be/OZWFlgPxJpU)
+
+[See a walkthrough video here](https://youtu.be/OZWFlgPxJpU)
+
 ## Specification
 
 We have a third party service that is unavailable from time to time then we need a way that will receive those files and upload them as soon as possible.
